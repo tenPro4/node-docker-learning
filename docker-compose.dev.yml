@@ -1,0 +1,19 @@
+version: "3"
+services:
+  nginx:
+    ports:
+      - "3002:80"
+  node-app:
+    build:
+      context: .
+      args: 
+        NODE_ENV: development
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGO_USER=mongo
+      - MONGO_PASSWORD=mongo123
+      - SESSION_SECRET=secret
+    command: npm run dev
