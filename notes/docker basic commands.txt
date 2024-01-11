@@ -1,0 +1,185 @@
+docker basic commands
+-----------------------
+
+docker pull image_name
+docker run image_name
+docker ps: check running container
+docker ps -a: check all containers
+docker rm container_id: remove container
+docker images :show list images
+docker rmi image_name:to remove image
+
+docker run -it image_name : -it flag enable image with interactive terminal
+
+docker run -it --name any_container_name -d image_name
+:run container in background
+
+docker run --name container_name image_name
+:manually give container_name
+
+docker exec -it container_name command_name(python3)
+:exec background running container_name command
+
+docker stop container_name
+:stop background runnig container
+
+docker start container_name
+:start container in background
+
+docker container prune
+:remove all stop container
+
+docker volumns
+:show all volumns
+
+docker logs container_name
+:show container logs
+
+docker inspect container_name
+:show container information
+
+
+
+Create docker file commands
+----------------------------
+
+FROM: specific base image to use for docker image
+RUN: run a command for docker container during the build process
+COPY: copy files from local file to docker image
+WORKDIR: 
+CMD:command when docker container start
+
+command for Dockerfile to create image
+docker build -t image_name .
+
+
+------------------------
+====Example docker file command==========
+FROM python:3-...
+WORKDIR /app
+COPY . /app
+RUN pip install -r requirement.txt
+EXPOSE 3000
+CMD python ./index.py
+
+
+------------------------
+
+Push image to docker hub
+------------------------
+docker tag image_name username(ryoskie)/any_name:v1.0(tag)
+
+docker login
+
+docker push username(ryoskie)/any_name:v1.0(tag)
+
+
+Postgres [Example](https://hub.docker.com/_/postgres)
+docker pull postgres
+docker run --name some-postgres -p 4000:27017 -e POSTGRES_PASSWORD=mysecretpassword -d postgres:version
+:e = environment
+:d = detach mode
+:version :specific version. if put nothing, will default use latest
+:p = port
+
+-----------
+Example
+-----------
+
+if you have two environment variable to have to repeat use -e flag, example:
+docker run postgres -e POSTGRES_PASSWORD=post123 -e POSTGRES_USER=postgres
+
+\ to make long docker command split in lines, example:
+docker run -d \
+> -p 8081:8081 \
+> -e PASSWORD_CONFIG=admin \
+> --name container_name
+> mongo
+
+
+------------------
+Network - Containers only can communication each other with same network tag
+
+Example we have mongo and mongo-express container:
+mongo: docker run -p 27017:27017 --net mongo-network -d mongo
+mongo-express: docker run -p 8081:8081 --net momgo-network mongo-express
+
+
+------------
+volumn flag
+------------
+# -v: sync container and local folder files changes
+
+docker run -v %cd%:/app -p 3000:3000 -d container_name image_name  (cmd)
+docker run -v ${pwd}:/app -p 3000:3000 -d container_name image_name (power shell)
+docker run -v $(pwd):/app -p 3000:3000 -d container_name image_name (mac)
+
+
+----------------------
+Practise
+----------------------
+1. docker run --name post1 -p 5436:5432 -e POSTGRES_PASSWORD=post123 -d postgres
+
+2. docker exec -it post1 psql -U postgres
+
+3.CREATE DATABASE test123;
+
+4.\q
+
+5.connect postgres contain in pgadmin
+
+6. check db
+
+Connection String:
+Host=localhost;Port=5436;Username=postgres;Password=post123;Database=test123;
+
+
+7. use pg_restore tool from postgres container
+-docker exec -it post1 bash
+
+8. pg_restore -U <username> -d <database_name> <backup_file>
+
+
+-----------
+VS code extension for docker yaml file
+--------------------
+:indent-rainbow
+
+
+-------------
+docker composer example for mongo and mongo-express:
+=================
+commands: 
+docker-compose -f yaml_file_name(docker-compose.yaml) up -d
+docker-compose -f yaml_file_name(docker-compose.yaml) down -v
+
+-v will remove volumn
+
+version:'3' // docker composer version use. current 3 is latest
+services:
+	mongodb:
+		image:mongo
+		ports:
+			- "27017:27017"
+		environment:
+			- MONGO_INITDB_ROOT_USERNAME=mongo
+			- MONGO_INIDB_ROOT_PASSWORD=mongo123
+		volumes: //make data persist
+			-mongo-data:/data/db //different server type has different path, need check
+	mongo-express:
+		image: mongo-express
+		restart: always //keep find connection until success
+		ports:
+			- "8081:8081"
+		environment:
+			- ADMINUSERNAME=mongo
+			- ADMINPASSWORD=mongo123
+			- SERVERNAME=mongodb //need follow mongodb services name
+	
+volumes: //make container data persist
+	mongo-data: //make sure the name is unique
+		driver: local
+
+		
+
+

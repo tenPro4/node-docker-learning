@@ -1,0 +1,139 @@
+https://github.com/Sanjeev-Thiyagarajan/node-docker
+
+1. Split COPY steps
+
+FROM node
+WORKDIR /app
+COPY package.json .
+RUN npm install
+COPY . ./      #split two COPY because package.json no change frequently during dev. the docker can identify each step changes and only build the change step(layer) when rebuild.
+EXPOSE 3000
+CMD node index.js
+
+
+2. Understand port
+docker run -p 4000:3000
+
+4000: is host machine port, which use on you machine to visit container
+3000: is container port number(every server platform have different default port, like postgres 5432,so we should do like any_port:5432 instead)
+
+this mean we using 4000 port to mapping 3000 port container app on our host machine.
+
+3. Enter live container interactive mode
+
+docker exec container_name bash
+>enter terminal mode
+
+
+4. .dockerignore
+node_modules
+Dockerfile
+.dockerignore
+.git
+.gitignore
+
+
+
+5. Create docker image
+-Create DockerFile
+-docker build -t image_name .
+
+
+6. sync local and image file
+package.json
+------------
+script:
+{
+	"start":"node index.js",
+	"dev":"nodemon -L index.js"
+}
+
+
+FROM node
+WORKDIR /app
+COPY package.json .
+RUN npm install
+COPY . ./      #split two COPY because package.json no change frequently during dev. the docker can identify each step changes and only build the change step(layer) when rebuild.
+EXPOSE 3000
+CMD npm run dev / CMD["npm","run","dev"]
+
+docker run -v %cd%:/app -v /app/node_modules -d container_name
+
+be note the binding is two-way. which mean if container have new added file, our local will add that file either.
+
+#by apply :ro that for volumn path, will make container read only
+-docker run -v %cd%:/app:ro -v /app/node_modules -d container_name
+
+
+7. specificilly indicate volumn path to avoid bind mount(async)
+docker run -v %cd%:/app -v /app/node_modules -d container_name
+
+/app/node_modules will not be sync in this command, but the rest will sync.
+
+
+8. Set environment variable
+## dockerfile
+
+FROM node
+WORKDIR /app
+COPY package.json .
+RUN npm install
+COPY . ./      #split two COPY because package.json no change frequently during dev. the docker can identify each step changes and only build the change step(layer) when rebuild.
+ENV PORT 3000
+EXPOSE $PORT
+CMD node index.js
+
+## command -e or --env flag
+- docker run -e PORT=4000 -p any_port:4000 -d container_name image_name
+- docker run --env-file ./.env -p any_port:4000 -d container_name image_name //if we have .env file
+
+9. Run in dev mode
+Example: 
+1. install nodemon
+2.bind mount volume:docker run -v %cd%:/app:ro -v /app/node_modules -p 3012:3000 -d --name node-app node-app-image
+
+first -v will async current working directory files
+second -v will ignore async node_modules in working directory
+
+b1a51fdefb9d0428a6ca4d9e4db17c200c8f0b10d14ce1e82e9bb42c04c61cbb
+3.add script in package.json:"dev":"nodemon -L index.js"
+4.Build image and run container
+
+10. Remove container along with it volumn
+use -fv flag
+docker rm container_name -fv
+
+11. Update container without down and up again
+
+for node_modules case which have new install package, can use -V flag to update the contain will up operation,example
+docker-compose -f docker-compose.yml up -V
+
+12. Using scale flag to stimulate multi instance
+docker-compose -f docker-compose.yml up -d --scale service_name=2
+
+13. Specific only the selected service rebuild only
+docker-compose -f docker-compose.yml up -d --build service_name
+or if rebuild service_name is dependency from other service but dont want rebuild that service,use --no-deps flag:
+docker-compose -f docker-compose.yml up -d --build --no-deps service_name
+
+
+14. Push image to docker hub
+-Create repo in docker hub
+-next create tag for image want to push:
+docker image tag image_name repo_name
+docker push repo_name
+
+15. Push specify service
+If only particular service is update, you can use:
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml build service_name
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml push service_name
+
+16. Pull image update
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull
+
+
+17. Tracking change with watchtower
+https://containrrr.dev/watchtower/
+docker run -d --name watchtower -e WATCHTOWER_TRACE=true -e WATCHTOWER_DEBUG=true -e WATCHTOWER_POLL_INTERVAL=50 -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower service_need_to_trace
+
+

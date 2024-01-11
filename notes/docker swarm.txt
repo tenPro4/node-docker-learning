@@ -1,0 +1,20 @@
+docker swarm
+create multi instance will enable less down time during new update is up.
+let say we have 3 instance for app
+when up is process, the first instance will down for update but the rest instance will keep live which user wont get the down time effect
+
+
+Init swarm(swarm is disable as default)
+
+-docker swarm init
+-docker swarm init --advertise-addr ip_address
+
+
+command to use docker swarm
+-docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml any_name(stackName)
+-docker node ls
+-docker stack ls
+-docker stack services stack_name
+
+just repeat again if got any update on image
+docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml 
